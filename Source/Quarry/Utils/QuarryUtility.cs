@@ -65,5 +65,17 @@ namespace Quarry {
 						 where (d.category == ThingCategory.Item && d.scatterableOnMapGen && !d.destroyOnDrop && !d.MadeFromStuff && d.GetCompProperties<CompProperties_Rottable>() == null)
 						 select d;
 		}
+
+		public static int PredictableSeed()
+		{
+			Map map = Find.CurrentMap;
+			//int seedHourOfDay = GenLocalDate.HourOfDay(map);
+			//int seedDayOfYear = GenLocalDate.DayOfYear(map);
+			//int seedYear = GenLocalDate.Year(map);
+			int seed = (GenLocalDate.HourOfDay(map) + GenLocalDate.DayOfYear(map)) * GenLocalDate.Year(map);
+			//int seed = (seedHourOfDay + seedDayOfYear) * seedYear;
+			//Log.Warning("seedHourOfDay: " + seedHourOfDay + "\nseedDayOfYear: " + seedDayOfYear + "\nseedYear: " + seedYear + "\n" + seed);
+			return seed;
+		}
 	}
 }

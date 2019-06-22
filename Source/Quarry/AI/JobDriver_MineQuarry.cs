@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using UnityEngine;
 using RimWorld;
@@ -54,7 +55,10 @@ namespace Quarry
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
-
+            // Multiplayer compatibility: Predictable seed for desync prevention.
+            Rand.PopState();
+            Rand.PushState(QuarryUtility.PredictableSeed());
+            
             // Set up fail conditions
             this.FailOn(delegate
             {
@@ -77,9 +81,6 @@ namespace Quarry
             yield return Toils_Reserve.Reserve(TargetIndex.C);
 
             // Go to the resource
-            yield return Toils_Goto.GotoThing(TargetIndex.B, PathEndMode.ClosestTouch);
-
-            // Pick up the resource
             yield return Toils_Haul.StartCarryThing(TargetIndex.B);
 
             // Carry the resource to the storage cell, then place it down
@@ -171,13 +172,15 @@ namespace Quarry
                     {
                         int sub = (int)(def.BaseMarketValue / 2f);
                         sub = Mathf.Clamp(sub, 0, 10);
-
+                        
                         stackCount += Mathf.Min(Rand.RangeInclusive(15 - sub, 40 - (sub * 2)), def.stackLimit - 1);
                     }
 
                     if (def == ThingDefOf.ComponentIndustrial)
                     {
-                        stackCount += Random.Range(0, 1);
+                        // Switching to usage of Verse.Rand for multiplayer compatibility instead of Unity.Random
+                        //stackCount += Random.Range(0, 1);
+                        stackCount += Rand.Range(0, 1);
                     }
 
                     haulableResult.stackCount = stackCount;
@@ -202,9 +205,12 @@ namespace Quarry
                         {
                             minHpThresh = Mathf.Clamp((float)haulableResult.TryGetComp<CompQuality>().Quality / 10f, 0.1f, 0.7f);
                         }
+
                         int hp = Mathf.RoundToInt(Rand.Range(minHpThresh, 1f) * haulableResult.MaxHitPoints);
+                        
                         hp = Mathf.Max(1, hp);
                         haulableResult.HitPoints = hp;
+                        Log.Warning("Out of hp damage if");
                     }
 
                     // Place the resource near the pawn

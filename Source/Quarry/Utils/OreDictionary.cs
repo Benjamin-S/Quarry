@@ -12,7 +12,9 @@ namespace Quarry {
 
 		public const int MaxWeight = 1000;
 
-    private static System.Random rand = new System.Random();
+		
+    //private static System.Random rand = new System.Random(); // Commenting out since it's not used anymore.
+    
 
 		private static SimpleCurve commonalityCurve = new SimpleCurve {
 			{ new CurvePoint(0.0f, 10f) },
@@ -99,7 +101,10 @@ namespace Quarry {
 			}
 
       // Randomizes a number from Zero to Sum
-      int roll = rand.Next(0, sum);
+      //int roll = rand.Next(0, sum);
+      
+      // Multiplayer compatibility. Using Rand.Range instead of System. or UnityEngine.
+      int roll = Rand.Range(0, sum);
 
       // Finds chosen item based on weight
       ThingDef selected = sortedWeights[sortedWeights.Count - 1].thingDef;
