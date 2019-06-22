@@ -210,7 +210,6 @@ namespace Quarry
                         
                         hp = Mathf.Max(1, hp);
                         haulableResult.HitPoints = hp;
-                        Log.Warning("Out of hp damage if");
                     }
 
                     // Place the resource near the pawn
