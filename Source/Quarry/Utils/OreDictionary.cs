@@ -11,9 +11,8 @@ namespace Quarry {
   public static class OreDictionary {
 
 		public const int MaxWeight = 1000;
-
 		
-    //private static System.Random rand = new System.Random(); // Commenting out since it's not used anymore.
+    private static System.Random rand = new System.Random();
     
 
 		private static SimpleCurve commonalityCurve = new SimpleCurve {
@@ -99,12 +98,14 @@ namespace Quarry {
 			for (int i = 0; i < QuarrySettings.oreDictionary.Count; i++) {
 				sum += QuarrySettings.oreDictionary[i].count;
 			}
-
+			
       // Randomizes a number from Zero to Sum
-      //int roll = rand.Next(0, sum);
+      // Multiplayer compatibility. Using Rand.Range instead of System.
+      int roll = MultiplayerCompat._MP_Enabled ? Rand.Range(0, sum) : rand.Next(0, sum);
       
-      // Multiplayer compatibility. Using Rand.Range instead of System. or UnityEngine.
-      int roll = Rand.Range(0, sum);
+      
+      
+      
 
       // Finds chosen item based on weight
       ThingDef selected = sortedWeights[sortedWeights.Count - 1].thingDef;

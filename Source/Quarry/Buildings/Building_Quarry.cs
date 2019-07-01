@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-
 using UnityEngine;
 using RimWorld;
 using Verse;
 using System.Text;
+using Multiplayer.API;
 
 namespace Quarry
 {
@@ -41,6 +41,13 @@ namespace Quarry
         private List<Pawn> owners = new List<Pawn>();
         #endregion Fields
 
+        // Multiplayer Compat.
+        [SyncField]
+        private Command_Action mineMode = new Command_Action();
+        
+        [SyncField]
+        private Command_Action autoHaulToggle = new Command_Action();
+        
         #region Public Properties
         public virtual int WallThickness => 2;
         public bool Unowned => owners.Count <= 0;
@@ -498,16 +505,21 @@ namespace Quarry
         #region MethodGroup_Inspecting
         public override IEnumerable<Gizmo> GetGizmos()
         {
-
-            Command_Action mineMode = new Command_Action()
+            mineMode.icon = (mineModeToggle ? Static.DesignationQuarryResources : Static.DesignationQuarryBlocks);
+            mineMode.defaultLabel = (mineModeToggle ? Static.LabelMineResources : Static.LabelMineBlocks);
+            mineMode.defaultDesc = (mineModeToggle ? Static.DescriptionMineResources : Static.DescriptionMineBlocks);
+            mineMode.hotKey = KeyBindingDefOf.Misc10;
+            mineMode.activateSound = SoundDefOf.Click;
+            if (MultiplayerCompat._MP_Enabled)
             {
-                icon = (mineModeToggle ? Static.DesignationQuarryResources : Static.DesignationQuarryBlocks),
-                defaultLabel = (mineModeToggle ? Static.LabelMineResources : Static.LabelMineBlocks),
-                defaultDesc = (mineModeToggle ? Static.DescriptionMineResources : Static.DescriptionMineBlocks),
-                hotKey = KeyBindingDefOf.Misc10,
-                activateSound = SoundDefOf.Click,
-                action = () => { mineModeToggle = !mineModeToggle; },
-            };
+                mineMode.action = () => { MineModeAction(); };
+            }
+            else
+            {
+                mineMode.action = () => { mineModeToggle = !mineModeToggle; };    
+            }
+            
+            
             // Only allow this option if stonecutting has been researched
             // The default behavior is to allow resources, but not blocks
             if (!QuarryDefOf.Stonecutting.IsFinished)
@@ -515,7 +527,7 @@ namespace Quarry
                 mineMode.Disable(Static.ReportGizmoLackingResearch);
             }
             yield return mineMode;
-
+            
             yield return new Command_Toggle()
             {
                 icon = Static.DesignationHaul,
@@ -548,6 +560,11 @@ namespace Quarry
             }
         }
 
+        [SyncMethod]
+        public void MineModeAction()
+        {
+            mineModeToggle = !mineModeToggle;
+        }
 
         public override string GetInspectString()
         {

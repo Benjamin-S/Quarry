@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using Multiplayer.API;
 using UnityEngine;
 using RimWorld;
 using Verse;
@@ -46,18 +46,19 @@ namespace Quarry
             }
         }
 
-
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
             return pawn.Reserve(job.GetTarget(TargetIndex.A), job);
         }
 
-
         protected override IEnumerable<Toil> MakeNewToils()
         {
-            // Multiplayer compatibility: Predictable seed for desync prevention.
-            Rand.PopState();
-            Rand.PushState(QuarryUtility.PredictableSeed());
+            if (MultiplayerCompat._MP_Enabled)
+            {
+                // Multiplayer compatibility: Predictable seed for desync prevention.
+                Rand.PopState();
+                Rand.PushState(MultiplayerCompat.PredictableSeed());    
+            }
             
             // Set up fail conditions
             this.FailOn(delegate
@@ -81,6 +82,9 @@ namespace Quarry
             yield return Toils_Reserve.Reserve(TargetIndex.C);
 
             // Go to the resource
+            yield return Toils_Goto.GotoThing(TargetIndex.B, PathEndMode.ClosestTouch);
+            
+            // Pick up the resource
             yield return Toils_Haul.StartCarryThing(TargetIndex.B);
 
             // Carry the resource to the storage cell, then place it down
@@ -178,9 +182,8 @@ namespace Quarry
 
                     if (def == ThingDefOf.ComponentIndustrial)
                     {
-                        // Switching to usage of Verse.Rand for multiplayer compatibility instead of Unity.Random
-                        //stackCount += Random.Range(0, 1);
-                        stackCount += Rand.Range(0, 1);
+                        // If multiplayer is enabled, switching to usage of Verse.Rand for multiplayer compatibility instead of Unity.Random
+                        stackCount += MultiplayerCompat._MP_Enabled ? Rand.Range(0, 1) : UnityEngine.Random.Range(0, 1);
                     }
 
                     haulableResult.stackCount = stackCount;
