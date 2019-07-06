@@ -28,9 +28,6 @@ namespace Quarry
     {
 
         #region Fields
-        public bool autoHaul = true;
-        public bool mineModeToggle = true;
-
         private float quarryPercent = 1f;
         private int jobsCompleted = 0;
         private bool firstSpawn = false;
@@ -43,10 +40,13 @@ namespace Quarry
 
         // Multiplayer Compat.
         [SyncField]
-        private Command_Action mineMode = new Command_Action();
-        
+        public bool autoHaul = true;
         [SyncField]
-        private Command_Action autoHaulToggle = new Command_Action();
+        public bool mineModeToggle = true;
+        [SyncField]
+        private Command_Action mineMode = new Command_Action();
+        [SyncField]
+        private Command_Toggle autoHaulToggle = new Command_Toggle();
         
         #region Public Properties
         public virtual int WallThickness => 2;
@@ -527,17 +527,32 @@ namespace Quarry
                 mineMode.Disable(Static.ReportGizmoLackingResearch);
             }
             yield return mineMode;
-            
-            yield return new Command_Toggle()
+
+            if (MultiplayerCompat._MP_Enabled)
             {
-                icon = Static.DesignationHaul,
-                defaultLabel = Static.LabelHaulMode,
-                defaultDesc = HaulDescription,
-                hotKey = KeyBindingDefOf.Misc11,
-                activateSound = SoundDefOf.Click,
-                isActive = () => autoHaul,
-                toggleAction = () => { autoHaul = !autoHaul; },
-            };
+                autoHaulToggle.icon = Static.DesignationHaul;
+                autoHaulToggle.defaultLabel = Static.LabelHaul;
+                autoHaulToggle.defaultDesc = HaulDescription;
+                autoHaulToggle.hotKey = KeyBindingDefOf.Misc11;
+                autoHaulToggle.activateSound = SoundDefOf.Click;
+                autoHaulToggle.isActive = IsAutoHaulActive;
+                autoHaulToggle.toggleAction = AutoHaulToggleAction;
+
+                yield return autoHaulToggle;
+            }
+            else
+            {
+                yield return new Command_Toggle()
+                {
+                    icon = Static.DesignationHaul,
+                    defaultLabel = Static.LabelHaulMode,
+                    defaultDesc = HaulDescription,
+                    hotKey = KeyBindingDefOf.Misc11,
+                    activateSound = SoundDefOf.Click,
+                    isActive = () => autoHaul,
+                    toggleAction = () => { autoHaul = !autoHaul; },
+                };  
+            }
 
             yield return new Command_Action
             {
@@ -560,6 +575,18 @@ namespace Quarry
             }
         }
 
+        [SyncMethod]
+        private void AutoHaulToggleAction()
+        {
+            autoHaul = !autoHaul;
+        }
+
+        [SyncMethod]
+        private bool IsAutoHaulActive()
+        {
+            return autoHaul;
+        }
+        
         [SyncMethod]
         public void MineModeAction()
         {
