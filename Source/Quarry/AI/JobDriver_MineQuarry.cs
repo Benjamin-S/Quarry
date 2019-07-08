@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-
+﻿using System;
+using System.Collections.Generic;
+using Multiplayer.API;
 using UnityEngine;
 using RimWorld;
 using Verse;
@@ -45,16 +46,20 @@ namespace Quarry
             }
         }
 
-
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
             return pawn.Reserve(job.GetTarget(TargetIndex.A), job);
         }
 
-
         protected override IEnumerable<Toil> MakeNewToils()
         {
-
+            if (MultiplayerCompat._MP_Enabled)
+            {
+                // Multiplayer compatibility: Predictable seed for desync prevention.
+                Rand.PopState();
+                Rand.PushState(MultiplayerCompat.PredictableSeed());    
+            }
+            
             // Set up fail conditions
             this.FailOn(delegate
             {
@@ -78,7 +83,7 @@ namespace Quarry
 
             // Go to the resource
             yield return Toils_Goto.GotoThing(TargetIndex.B, PathEndMode.ClosestTouch);
-
+            
             // Pick up the resource
             yield return Toils_Haul.StartCarryThing(TargetIndex.B);
 
@@ -171,13 +176,14 @@ namespace Quarry
                     {
                         int sub = (int)(def.BaseMarketValue / 2f);
                         sub = Mathf.Clamp(sub, 0, 10);
-
+                        
                         stackCount += Mathf.Min(Rand.RangeInclusive(15 - sub, 40 - (sub * 2)), def.stackLimit - 1);
                     }
 
                     if (def == ThingDefOf.ComponentIndustrial)
                     {
-                        stackCount += Random.Range(0, 1);
+                        // If multiplayer is enabled, switching to usage of Verse.Rand for multiplayer compatibility instead of Unity.Random
+                        stackCount += MultiplayerCompat._MP_Enabled ? Rand.Range(0, 1) : UnityEngine.Random.Range(0, 1);
                     }
 
                     haulableResult.stackCount = stackCount;
@@ -202,7 +208,9 @@ namespace Quarry
                         {
                             minHpThresh = Mathf.Clamp((float)haulableResult.TryGetComp<CompQuality>().Quality / 10f, 0.1f, 0.7f);
                         }
+
                         int hp = Mathf.RoundToInt(Rand.Range(minHpThresh, 1f) * haulableResult.MaxHitPoints);
+                        
                         hp = Mathf.Max(1, hp);
                         haulableResult.HitPoints = hp;
                     }

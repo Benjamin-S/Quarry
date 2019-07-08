@@ -15,8 +15,7 @@ namespace Quarry {
 			t.defName.EndsWith("_RoughHewn") || 
 			t.defName.EndsWith("_Smooth")
 		);
-
-
+		
 		public static bool IsValidQuarryRock(string str) {
 			if (QuarrySettings.database.NullOrEmpty()) {
 				Log.Error("Quarry:: Trying to validate rock types before the database has been built.");
@@ -31,7 +30,6 @@ namespace Quarry {
 			return false;
 		}
 
-
 		public static bool IsValidQuarryChunk(string str, out ThingDef chunk) {
 			chunk = null;
 			if (QuarrySettings.database.NullOrEmpty()) {
@@ -45,7 +43,6 @@ namespace Quarry {
 			return false;
 		}
 
-
 		public static bool IsValidQuarryBlocks(string str, out ThingDef blocks) {
 			blocks = null;
 			if (QuarrySettings.database.NullOrEmpty()) {
@@ -58,7 +55,6 @@ namespace Quarry {
 			}
 			return false;
 		}
-
 
 		public static IEnumerable<ThingDef> PossibleThingDefs() {
 			return from d in DefDatabase<ThingDef>.AllDefs

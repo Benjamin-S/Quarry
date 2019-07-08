@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-
 using UnityEngine;
 using RimWorld;
 using Verse;
 using System.Text;
+using Multiplayer.API;
 
 namespace Quarry
 {
@@ -28,9 +28,6 @@ namespace Quarry
     {
 
         #region Fields
-        public bool autoHaul = true;
-        public bool mineModeToggle = true;
-
         private float quarryPercent = 1f;
         private int jobsCompleted = 0;
         private bool firstSpawn = false;
@@ -41,6 +38,16 @@ namespace Quarry
         private List<Pawn> owners = new List<Pawn>();
         #endregion Fields
 
+        // Multiplayer Compat.
+        [SyncField]
+        public bool autoHaul = true;
+        [SyncField]
+        public bool mineModeToggle = true;
+        [SyncField]
+        private Command_Action mineMode = new Command_Action();
+        [SyncField]
+        private Command_Toggle autoHaulToggle = new Command_Toggle();
+        
         #region Public Properties
         public virtual int WallThickness => 2;
         public bool Unowned => owners.Count <= 0;
@@ -498,16 +505,21 @@ namespace Quarry
         #region MethodGroup_Inspecting
         public override IEnumerable<Gizmo> GetGizmos()
         {
-
-            Command_Action mineMode = new Command_Action()
+            mineMode.icon = (mineModeToggle ? Static.DesignationQuarryResources : Static.DesignationQuarryBlocks);
+            mineMode.defaultLabel = (mineModeToggle ? Static.LabelMineResources : Static.LabelMineBlocks);
+            mineMode.defaultDesc = (mineModeToggle ? Static.DescriptionMineResources : Static.DescriptionMineBlocks);
+            mineMode.hotKey = KeyBindingDefOf.Misc10;
+            mineMode.activateSound = SoundDefOf.Click;
+            if (MultiplayerCompat._MP_Enabled)
             {
-                icon = (mineModeToggle ? Static.DesignationQuarryResources : Static.DesignationQuarryBlocks),
-                defaultLabel = (mineModeToggle ? Static.LabelMineResources : Static.LabelMineBlocks),
-                defaultDesc = (mineModeToggle ? Static.DescriptionMineResources : Static.DescriptionMineBlocks),
-                hotKey = KeyBindingDefOf.Misc10,
-                activateSound = SoundDefOf.Click,
-                action = () => { mineModeToggle = !mineModeToggle; },
-            };
+                mineMode.action = () => { MineModeAction(); };
+            }
+            else
+            {
+                mineMode.action = () => { mineModeToggle = !mineModeToggle; };    
+            }
+            
+            
             // Only allow this option if stonecutting has been researched
             // The default behavior is to allow resources, but not blocks
             if (!QuarryDefOf.Stonecutting.IsFinished)
@@ -516,16 +528,31 @@ namespace Quarry
             }
             yield return mineMode;
 
-            yield return new Command_Toggle()
+            if (MultiplayerCompat._MP_Enabled)
             {
-                icon = Static.DesignationHaul,
-                defaultLabel = Static.LabelHaulMode,
-                defaultDesc = HaulDescription,
-                hotKey = KeyBindingDefOf.Misc11,
-                activateSound = SoundDefOf.Click,
-                isActive = () => autoHaul,
-                toggleAction = () => { autoHaul = !autoHaul; },
-            };
+                autoHaulToggle.icon = Static.DesignationHaul;
+                autoHaulToggle.defaultLabel = Static.LabelHaul;
+                autoHaulToggle.defaultDesc = HaulDescription;
+                autoHaulToggle.hotKey = KeyBindingDefOf.Misc11;
+                autoHaulToggle.activateSound = SoundDefOf.Click;
+                autoHaulToggle.isActive = IsAutoHaulActive;
+                autoHaulToggle.toggleAction = AutoHaulToggleAction;
+
+                yield return autoHaulToggle;
+            }
+            else
+            {
+                yield return new Command_Toggle()
+                {
+                    icon = Static.DesignationHaul,
+                    defaultLabel = Static.LabelHaulMode,
+                    defaultDesc = HaulDescription,
+                    hotKey = KeyBindingDefOf.Misc11,
+                    activateSound = SoundDefOf.Click,
+                    isActive = () => autoHaul,
+                    toggleAction = () => { autoHaul = !autoHaul; },
+                };  
+            }
 
             yield return new Command_Action
             {
@@ -548,6 +575,23 @@ namespace Quarry
             }
         }
 
+        [SyncMethod]
+        private void AutoHaulToggleAction()
+        {
+            autoHaul = !autoHaul;
+        }
+
+        [SyncMethod]
+        private bool IsAutoHaulActive()
+        {
+            return autoHaul;
+        }
+        
+        [SyncMethod]
+        public void MineModeAction()
+        {
+            mineModeToggle = !mineModeToggle;
+        }
 
         public override string GetInspectString()
         {
