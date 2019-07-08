@@ -1,9 +1,16 @@
 # Quarry MP
 
 This should resolve syncing issues with mining out resources, toggling between resources to blocks, and autohaul on/off toggle.
-The file in Assemblies is already compiled to include this if you want to just drop it in.
 
-Needs 0MultiplayerAPI.dll from Assemblies or https://github.com/notfood/RimWorld-Multiplayer-Compatibility to compile if you're going that route.
+## Playing
+Download the repo:  
+https://github.com/ariawinter/Quarry/archive/master.zip 
+
+Make a Quarry directory in your Rimworld/Mods directory.  
+Extract About, Assemblies, Defs, Languages, Patches, Textures to it.
+
+## Compiling
+0MultiplayerAPI.dll from Assemblies or https://github.com/notfood/RimWorld-Multiplayer-Compatibility will need to be referenced if you're going this route.
 
 # Quarry
 
